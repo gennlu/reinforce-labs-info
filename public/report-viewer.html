@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPT-5 Mini — Red Team Run Viewer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #141720;
+    --border: #1e2330;
+    --border-lit: #2c3245;
+    --text: #c8cdd8;
+    --text-dim: #5a6070;
+    --text-bright: #eaecf2;
+    --accent: #4f8ef7;
+    --accent-dim: #1e3460;
+    --success: #2dca72;
+    --success-dim: #0d3320;
+    --fail: #e84c6b;
+    --fail-dim: #350f18;
+    --warn: #f4a83a;
+    --warn-dim: #3a2510;
+    --partial: #9b6cf7;
+    --partial-dim: #261848;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: 0.02em;
+  }
+  header .model-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    padding: 2px 7px;
+    letter-spacing: 0.04em;
+  }
+  header .judge-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  /* LAYOUT */
+  .layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* SIDEBAR */
+  aside {
+    width: 340px;
+    min-width: 280px;
+    max-width: 380px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 57px);
+    position: sticky;
+    top: 57px;
+    overflow: hidden;
+  }
+
+  .filter-bar {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--surface);
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .filter-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    min-width: 56px;
+  }
+
+  /* Toggle chips */
+  .chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    border: 1px solid var(--border-lit);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--text-dim); color: var(--text); }
+  .chip.active-all  { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .chip.active-success { background: var(--success-dim); border-color: var(--success); color: var(--success); }
+  .chip.active-fail { background: var(--fail-dim); border-color: var(--fail); color: var(--fail); }
+
+  .chip.cat-illegal_activity.active { background: #1f1a0d; border-color: var(--warn); color: var(--warn); }
+  .chip.cat-child_safety.active    { background: #1a0d1a; border-color: #d066e0; color: #d066e0; }
+  .chip.cat-self_harm.active       { background: var(--fail-dim); border-color: var(--fail); color: var(--fail); }
+
+  .chip.verdict-compliance.active { background: var(--success-dim); border-color: var(--success); color: var(--success); }
+  .chip.verdict-partial.active    { background: var(--partial-dim); border-color: var(--partial); color: var(--partial); }
+  .chip.verdict-refusal.active    { background: #131313; border-color: #444; color: #888; }
+
+  input[type="search"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border-lit);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="search"]:focus { border-color: var(--accent); }
+  input[type="search"]::placeholder { color: var(--text-dim); }
+
+  .list-header {
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .result-list {
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-lit) transparent;
+  }
+
+  .result-item {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .result-item:hover { background: var(--surface); }
+  .result-item.selected { background: #161c2a; border-left: 2px solid var(--accent); padding-left: 14px; }
+
+  .item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .item-strategy {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-bright);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .item-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .item-goal {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .item-meta {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 2px;
+    border: 1px solid;
+    letter-spacing: 0.04em;
+  }
+  .badge-success { background: var(--success-dim); border-color: var(--success); color: var(--success); }
+  .badge-fail    { background: var(--fail-dim); border-color: #5a2030; color: #7a4050; }
+  .badge-compliance { background: var(--success-dim); border-color: var(--success); color: var(--success); }
+  .badge-partial    { background: var(--partial-dim); border-color: var(--partial); color: var(--partial); }
+  .badge-refusal    { background: #111; border-color: #333; color: #555; }
+  .badge-empty      { background: #111; border-color: #222; color: #444; }
+
+  .badge-cat-illegal_activity { background: #1f1a0d; border-color: #5a4020; color: #8a6030; }
+  .badge-cat-child_safety    { background: #1a0d1a; border-color: #5a2060; color: #9040a0; }
+  .badge-cat-self_harm       { background: var(--fail-dim); border-color: #5a2030; color: #9a4050; }
+
+  .sev-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* MAIN */
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 36px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-lit) transparent;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 12px;
+    color: var(--text-dim);
+  }
+  .empty-state .icon { font-size: 36px; opacity: 0.4; }
+  .empty-state p { font-family: var(--mono); font-size: 12px; }
+
+  /* DETAIL */
+  .detail-header {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .detail-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .detail-strategy {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-bright);
+    line-height: 1.2;
+  }
+
+  .detail-goal {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    border-left: 3px solid var(--border-lit);
+    padding-left: 12px;
+    max-width: 680px;
+  }
+
+  .detail-metrics {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .metric {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .metric-value {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-bright);
+  }
+  .metric-value.green { color: var(--success); }
+  .metric-value.red   { color: var(--fail); }
+  .metric-value.amber { color: var(--warn); }
+  .metric-value.purple { color: var(--partial); }
+
+  .divider {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+  }
+
+  /* TURNS */
+  .turns-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+    margin-top: 8px;
+  }
+
+  .turn {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2px;
+  }
+
+  .turn-gutter {
+    width: 48px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 14px;
+    position: relative;
+  }
+  .turn-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    z-index: 1;
+    background: var(--bg);
+    padding: 2px 0;
+  }
+  .turn-line {
+    position: absolute;
+    top: 0; bottom: -2px;
+    width: 1px;
+    background: var(--border);
+    left: 50%;
+  }
+  .turn:last-child .turn-line { display: none; }
+
+  .turn-body {
+    flex: 1;
+    padding-bottom: 20px;
+  }
+
+  .message-block {
+    margin-bottom: 8px;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .msg-header {
+    padding: 7px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .msg-header.user-header   { background: #12151e; }
+  .msg-header.target-header { background: #10141a; }
+
+  .msg-role {
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .msg-step {
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  .msg-content {
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-lit) transparent;
+  }
+
+  .msg-content.user-content   { background: #0e1018; }
+  .msg-content.target-content { background: #0a0d12; }
+  .msg-content.empty-content  { color: var(--text-dim); font-style: italic; background: #090c10; }
+
+  .turn-verdict {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 12px;
+    background: #090b0f;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-top: 4px;
+  }
+  .turn-verdict-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    margin-right: 2px;
+  }
+  .turn-reasoning {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  /* HOLISTIC */
+  .holistic-box {
+    margin-top: 20px;
+    padding: 14px 16px;
+    border: 1px solid var(--border-lit);
+    border-radius: 6px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .holistic-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+  }
+  .holistic-reasoning {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Load zone */
+  .load-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 16px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .load-zone label {
+    cursor: pointer;
+    padding: 12px 28px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 5px;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .load-zone label:hover { background: #1a3060; }
+  .load-zone input { display: none; }
+
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border-lit);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-lit); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="load-screen" class="load-zone">
+  <div style="font-size:28px; opacity:0.5">⬡</div>
+  <div style="color: var(--text-bright); font-size:15px; font-weight:600;">GPT-5 Mini Run Viewer</div>
+  <p>Load a red-team run JSON file to begin</p>
+  <label>
+    <input type="file" accept=".json" id="file-input">
+    Open JSON file
+  </label>
+  <p style="font-size:11px; opacity:0.5">or drag & drop anywhere</p>
+</div>
+
+<div id="app" style="display:none; flex-direction:column; min-height:100vh;">
+
+  <header>
+    <h1 id="hdr-title">Run Viewer</h1>
+    <span class="model-tag" id="hdr-model"></span>
+    <span class="judge-tag" id="hdr-judge"></span>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <div class="filter-bar">
+        <input type="search" id="search-input" placeholder="Search strategy, goal, id…">
+
+        <div class="filter-row">
+          <span class="filter-label">Result</span>
+          <button class="chip active-all" data-filter="success" data-val="all">All</button>
+          <button class="chip" data-filter="success" data-val="true">✓ Success</button>
+          <button class="chip" data-filter="success" data-val="false">✗ Failed</button>
+        </div>
+
+        <div class="filter-row">
+          <span class="filter-label">Verdict</span>
+          <button class="chip verdict-compliance" data-filter="verdict" data-val="compliance">Compliance</button>
+          <button class="chip verdict-partial" data-filter="verdict" data-val="partial">Partial</button>
+          <button class="chip verdict-refusal" data-filter="verdict" data-val="refusal">Refusal</button>
+        </div>
+
+        <div class="filter-row" id="cat-row">
+          <span class="filter-label">Category</span>
+        </div>
+      </div>
+
+      <div class="list-header">
+        <span id="count-label">— results</span>
+        <span id="success-rate"></span>
+      </div>
+
+      <div class="result-list" id="result-list"></div>
+    </aside>
+
+    <main id="detail-pane">
+      <div class="empty-state">
+        <div class="icon">◈</div>
+        <p>Select a run to inspect</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+let allResults = [];
+let metadata = {};
+let filtered = [];
+let selectedId = null;
+
+const activeFilters = {
+  success: 'all',
+  verdict: new Set(),
+  category: new Set(),
+  search: ''
+};
+
+// ── File loading ──────────────────────────────────────────────
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) loadFile(file);
+});
+
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.json')) loadFile(file);
+});
+
+function loadFile(file) {
+  const ls = document.getElementById('load-screen');
+  ls.innerHTML = '<div class="spinner"></div><p style="font-family:var(--mono);font-size:12px;color:var(--text-dim)">Parsing…</p>';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      init(data);
+    } catch(err) {
+      ls.innerHTML = `<p style="color:var(--fail);font-family:var(--mono)">Parse error: ${err.message}</p>`;
+    }
+  };
+  reader.readAsText(file);
+}
+
+function init(data) {
+  allResults = data.results || [];
+  metadata = data.metadata || {};
+
+  document.getElementById('hdr-title').textContent = `${metadata.target_model || 'Model'} — Red Team Runs`;
+  document.getElementById('hdr-model').textContent = metadata.target_model || '';
+  document.getElementById('hdr-judge').textContent = `judge: ${metadata.judge || ''}   n=${metadata.total_results || allResults.length}   date: ${metadata.date || ''}`;
+
+  // Build category chips
+  const cats = [...new Set(allResults.map(r => r.scenario?.policy_category).filter(Boolean))];
+  const catRow = document.getElementById('cat-row');
+  cats.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = `chip cat-${cat}`;
+    b.dataset.filter = 'category';
+    b.dataset.val = cat;
+    b.textContent = cat.replace(/_/g,' ');
+    catRow.appendChild(b);
+  });
+
+  document.getElementById('load-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  setupFilters();
+  applyFilters();
+}
+
+// ── Filters ───────────────────────────────────────────────────
+function setupFilters() {
+  document.querySelectorAll('.chip[data-filter]').forEach(btn => {
+    btn.addEventListener('click', () => toggleFilter(btn));
+  });
+  document.getElementById('search-input').addEventListener('input', e => {
+    activeFilters.search = e.target.value.toLowerCase();
+    applyFilters();
+  });
+}
+
+function toggleFilter(btn) {
+  const { filter, val } = btn.dataset;
+
+  if (filter === 'success') {
+    activeFilters.success = val;
+    document.querySelectorAll('.chip[data-filter="success"]').forEach(b => {
+      b.className = `chip`;
+      if (b.dataset.val === val) b.classList.add(`active-${val === 'true' ? 'success' : val === 'false' ? 'fail' : 'all'}`);
+    });
+  } else {
+    // toggle sets
+    const set = activeFilters[filter];
+    if (set.has(val)) set.delete(val);
+    else set.add(val);
+    btn.classList.toggle(`active`, set.has(val));
+    // also handle named active class for verdict/category
+    const namedClass = filter === 'verdict' ? `verdict-${val}` : `cat-${val}`;
+    if (set.has(val)) btn.classList.add('active');
+    else btn.classList.remove('active');
+  }
+
+  applyFilters();
+}
+
+function applyFilters() {
+  filtered = allResults.filter(r => {
+    // success filter
+    if (activeFilters.success === 'true' && !r.success) return false;
+    if (activeFilters.success === 'false' && r.success) return false;
+
+    // verdict filter
+    if (activeFilters.verdict.size > 0 && !activeFilters.verdict.has(r.holistic_verdict)) return false;
+
+    // category filter
+    if (activeFilters.category.size > 0 && !activeFilters.category.has(r.scenario?.policy_category)) return false;
+
+    // search
+    if (activeFilters.search) {
+      const q = activeFilters.search;
+      const hay = `${r.strategy_name} ${r.id} ${r.scenario?.harmful_goal} ${r.strategy_id}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+
+    return true;
+  });
+
+  renderList();
+}
+
+// ── List ──────────────────────────────────────────────────────
+function renderList() {
+  const list = document.getElementById('result-list');
+  const total = filtered.length;
+  const successes = filtered.filter(r => r.success).length;
+
+  document.getElementById('count-label').textContent = `${total} result${total !== 1 ? 's' : ''}`;
+  document.getElementById('success-rate').textContent = total > 0
+    ? `${((successes/total)*100).toFixed(0)}% success`
+    : '';
+
+  list.innerHTML = '';
+  filtered.forEach(r => {
+    const el = document.createElement('div');
+    el.className = 'result-item' + (r.id === selectedId ? ' selected' : '');
+    el.dataset.id = r.id;
+
+    const sevColor = r.max_severity > 0.6 ? '#e84c6b' : r.max_severity > 0.3 ? '#f4a83a' : '#3a4050';
+
+    el.innerHTML = `
+      <div class="item-top">
+        <span class="item-strategy">${esc(r.strategy_name)}</span>
+        <span class="item-id">${r.id.slice(0,8)}</span>
+      </div>
+      <div class="item-goal">${esc(r.scenario?.harmful_goal || '')}</div>
+      <div class="item-meta">
+        ${r.success
+          ? '<span class="badge badge-success">SUCCESS</span>'
+          : '<span class="badge badge-fail">FAILED</span>'}
+        ${verdictBadge(r.holistic_verdict)}
+        <span class="badge badge-cat-${r.scenario?.policy_category}">${(r.scenario?.policy_category||'').replace(/_/g,' ')}</span>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:4px">
+          <span class="sev-dot" style="background:${sevColor}"></span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">${r.max_severity.toFixed(2)}</span>
+        </span>
+      </div>
+    `;
+
+    el.addEventListener('click', () => {
+      selectedId = r.id;
+      document.querySelectorAll('.result-item').forEach(i => i.classList.remove('selected'));
+      el.classList.add('selected');
+      renderDetail(r);
+    });
+
+    list.appendChild(el);
+  });
+
+  // re-render detail if selected item still in filtered
+  if (selectedId) {
+    const still = filtered.find(r => r.id === selectedId);
+    if (!still) {
+      selectedId = null;
+      document.getElementById('detail-pane').innerHTML = `
+        <div class="empty-state">
+          <div class="icon">◈</div>
+          <p>Select a run to inspect</p>
+        </div>`;
+    }
+  }
+}
+
+function verdictBadge(v) {
+  if (!v) return '<span class="badge badge-empty">—</span>';
+  return `<span class="badge badge-${v}">${v}</span>`;
+}
+
+// ── Detail ────────────────────────────────────────────────────
+function renderDetail(r) {
+  const pane = document.getElementById('detail-pane');
+
+  const fitnessColor = r.fitness > 0.6 ? 'green' : r.fitness > 0.3 ? 'amber' : 'red';
+  const sevColor = r.max_severity > 0.6 ? 'red' : r.max_severity > 0.3 ? 'amber' : '';
+  const successStr = r.success ? '<span style="color:var(--success)">✓ SUCCESS</span>' : '<span style="color:var(--text-dim)">✗ FAILED</span>';
+
+  const turnsHtml = (r.turns || []).map(t => {
+    const hasResponse = t.target_response && t.target_response.trim().length > 0;
+    const vClass = `badge-${t.judge_verdict || 'empty'}`;
+
+    return `
+    <div class="turn">
+      <div class="turn-gutter">
+        <div class="turn-line"></div>
+        <div class="turn-num">T${t.turn_number}</div>
+      </div>
+      <div class="turn-body">
+        <div class="message-block">
+          <div class="msg-header user-header">
+            <span class="msg-role">User</span>
+            <span class="msg-step">${esc(t.step_id || '')}</span>
+          </div>
+          <div class="msg-content user-content">${esc(t.user_message || '')}</div>
+        </div>
+
+        <div class="message-block">
+          <div class="msg-header target-header">
+            <span class="msg-role">Model</span>
+            <span class="badge ${vClass}" style="font-size:9px">${t.judge_verdict || '—'}</span>
+          </div>
+          <div class="msg-content target-content ${hasResponse ? '' : 'empty-content'}">${
+            hasResponse ? esc(t.target_response) : '[no response / redacted]'
+          }</div>
+        </div>
+
+        ${t.judge_reasoning ? `
+        <div class="turn-verdict">
+          <span class="turn-verdict-label">Judge</span>
+          <span class="turn-reasoning">${esc(t.judge_reasoning)}</span>
+          ${t.judge_severity > 0 ? `<span class="badge badge-fail" style="margin-left:auto">sev ${t.judge_severity.toFixed(2)}</span>` : ''}
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  pane.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-title-row">
+        <div class="detail-strategy">${esc(r.strategy_name)}</div>
+        ${r.success ? '<span class="badge badge-success" style="font-size:12px">SUCCESS</span>' : ''}
+        ${verdictBadge(r.holistic_verdict)}
+        <span class="badge badge-cat-${r.scenario?.policy_category}">${(r.scenario?.policy_category||'').replace(/_/g,' ')}</span>
+      </div>
+
+      <div class="detail-goal">${esc(r.scenario?.harmful_goal || '')}</div>
+
+      <div class="detail-metrics">
+        <div class="metric">
+          <span class="metric-label">Outcome</span>
+          <span class="metric-value ${r.success ? 'green' : ''}">${r.success ? 'Success' : 'Failed'}</span>
+        </div>
+        <div class="divider"></div>
+        <div class="metric">
+          <span class="metric-label">Max Severity</span>
+          <span class="metric-value ${sevColor}">${r.max_severity.toFixed(3)}</span>
+        </div>
+        <div class="divider"></div>
+        <div class="metric">
+          <span class="metric-label">Fitness</span>
+          <span class="metric-value ${fitnessColor}">${r.fitness.toFixed(3)}</span>
+        </div>
+        <div class="divider"></div>
+        <div class="metric">
+          <span class="metric-label">Trajectory</span>
+          <span class="metric-value">${r.trajectory_score.toFixed(3)}</span>
+        </div>
+        <div class="divider"></div>
+        <div class="metric">
+          <span class="metric-label">Engagement</span>
+          <span class="metric-value">${r.engagement_score.toFixed(3)}</span>
+        </div>
+        <div class="divider"></div>
+        <div class="metric">
+          <span class="metric-label">Turns</span>
+          <span class="metric-value">${r.total_turns}</span>
+        </div>
+        <div class="divider"></div>
+        <div class="metric">
+          <span class="metric-label">ID</span>
+          <span class="metric-value" style="font-size:11px;color:var(--text-dim)">${r.id}</span>
+        </div>
+        <div class="divider"></div>
+        <div class="metric">
+          <span class="metric-label">Strategy</span>
+          <span class="metric-value" style="font-size:11px">${esc(r.strategy_id || '')}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="turns-label">Conversation turns (${r.total_turns})</div>
+    ${turnsHtml}
+
+    ${r.holistic_reasoning ? `
+    <div class="holistic-box">
+      <div class="holistic-title">Holistic Judge Reasoning</div>
+      <div class="holistic-reasoning">${esc(r.holistic_reasoning)}</div>
+    </div>` : ''}
+  `;
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
