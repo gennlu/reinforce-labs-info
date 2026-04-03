@@ -9,6 +9,7 @@ import { TractionSimpleSlide } from "./slides/traction-simple-slide"
 import { CentificSlide } from "./slides/centific-slide"
 import { SpeedSlide } from "./slides/speed-slide"
 import { InstructionFollowingSlide } from "./slides/instruction-following-slide"
+import { SftDataSlide } from "./slides/sft-data-slide"
 import { ProductSlide } from "./slides/product-slide"
 import { ArchitectureSlide } from "./slides/architecture-slide"
 import { VisionSlide } from "./slides/vision-slide"
@@ -23,6 +24,7 @@ const slides = [
   { id: "centific", component: CentificSlide },
   { id: "speed", component: SpeedSlide },
   { id: "instruction-following", component: InstructionFollowingSlide },
+  { id: "sft-data", component: SftDataSlide },
   { id: "product", component: ProductSlide },
   { id: "architecture", component: ArchitectureSlide },
   { id: "vision", component: VisionSlide },
