@@ -1,7 +1,7 @@
 "use client"
 
 import { SlideContainer } from "../slide-container"
-import { Clock, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 export function SpeedSlide() {
   return (
@@ -11,21 +11,15 @@ export function SpeedSlide() {
           <div>
             <span className="text-sm font-medium text-primary uppercase tracking-wider">Case Study</span>
             <h2 className="mt-2 text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Mercor
+              Holistic Model Evaluation in Under 48 Hours
             </h2>
           </div>
           
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Clock className="h-5 w-5 text-primary" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Customer</span>
-          </div>
         </div>
         
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <p className="text-muted-foreground">
-            Finding failure modes and vulnerabilities at speed to accelerate deals.
+            Scaled safety evaluation to illicit model failures.
           </p>
           <span className="text-muted-foreground">|</span>
           <div className="flex items-center gap-4">
@@ -36,11 +30,13 @@ export function SpeedSlide() {
             </div>
             <span className="text-muted-foreground">(15-45x faster)</span>
           </div>
+          <span className="text-muted-foreground">|</span>
+          <span className="font-medium text-foreground">Use case: Frontier model</span>
         </div>
         
         <div className="bg-[#0a0c10] border border-border rounded-2xl overflow-hidden">
           <iframe 
-            src="/simulation-viewer.html" 
+            src="/final_report.html"
             className="w-full h-[500px] border-0"
             title="Jailbreak Simulation Viewer"
           />

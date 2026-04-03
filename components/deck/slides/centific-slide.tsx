@@ -1,7 +1,7 @@
 "use client"
 
 import { SlideContainer } from "../slide-container"
-import { Handshake, CheckCircle2 } from "lucide-react"
+import { CheckCircle2 } from "lucide-react"
 
 export function CentificSlide() {
   return (
@@ -11,16 +11,10 @@ export function CentificSlide() {
           <div>
             <span className="text-sm font-medium text-primary uppercase tracking-wider">Case Study</span>
             <h2 className="mt-2 text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Centific Partnership
+              Over Refusal Examples
             </h2>
           </div>
           
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Handshake className="h-5 w-5 text-primary" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Customer + Channel Partner</span>
-          </div>
         </div>
         
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
@@ -28,7 +22,7 @@ export function CentificSlide() {
             Centific provides HITL expertise. We automate and scale quality spot checks.
           </p>
           <span className="text-muted-foreground">|</span>
-          <span className="font-medium text-foreground">Use Case: Travel Agent</span>
+          <span className="font-medium text-foreground">Use case: Travel agent</span>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-primary" />

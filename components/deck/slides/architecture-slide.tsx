@@ -74,16 +74,16 @@ export function ArchitectureSlide() {
                 <Bot className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-bold text-foreground text-lg">Flint</h3>
-                <p className="text-xs text-muted-foreground">Simulation Engine</p>
+                <h3 className="font-bold text-foreground text-lg">Simulation Engine</h3>
+                <p className="text-xs text-muted-foreground">End-to-end evaluation pipeline</p>
               </div>
             </div>
 
             <div className="grid md:grid-cols-5 gap-3 items-center">
               {/* Simulation Agents */}
               <div className="bg-background/80 border border-border rounded-xl p-3 space-y-2">
-                <h4 className="font-semibold text-foreground text-sm">Simulation Agents</h4>
-                <p className="text-xs text-muted-foreground">Multi-turn interactions</p>
+                <h4 className="font-semibold text-foreground text-sm">Flint</h4>
+                <p className="text-xs text-muted-foreground">Simulation Agents</p>
                 <div className="flex flex-wrap gap-1 pt-1">
                   <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">Red Team</span>
                   <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">User Sim</span>
@@ -116,9 +116,9 @@ export function ArchitectureSlide() {
               <div className="bg-background/80 border border-border rounded-xl p-3 space-y-2">
                 <div className="flex items-center gap-2">
                   <Scale className="h-4 w-4 text-primary" />
-                  <h4 className="font-semibold text-foreground text-sm">Judge</h4>
+                  <h4 className="font-semibold text-foreground text-sm">Stone</h4>
                 </div>
-                <p className="text-xs text-muted-foreground">Scores against policies</p>
+                <p className="text-xs text-muted-foreground">Judge</p>
                 <span className="text-xs px-2 py-0.5 bg-primary/10 border border-primary/30 rounded-full text-primary font-medium flex items-center gap-1 w-fit">
                   <User className="h-3 w-3" /> Review with rubrics
                 </span>
@@ -140,7 +140,7 @@ export function ArchitectureSlide() {
                   <Shield className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-foreground text-lg">Stone</h3>
+                  <h3 className="font-bold text-foreground text-lg">Real-time Defenses</h3>
                   <p className="text-xs text-muted-foreground">Custom Guardrails</p>
                 </div>
               </div>
